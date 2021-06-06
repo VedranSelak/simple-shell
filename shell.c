@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
 	printf("count c <filename> This command prints the count of characters in the file! \n\n");
 	printf("count w <filename> This command prints the count of words in a file! \n\n");
 	printf("count l <filename> This command prints the count of lines in a file! \n\n");
-	printf("count <word/character> <filename> This command prints the count of occurences of a given character/word in a file!\n\n");
+	printf("count <word/character> <filename> This command prints the count of occurences of a given character/word in a file (characters are case insensitive, while words are case sensitive) !\n\n");
 	printf("format <filename> This command prints the formated text in a camel case manner!\n\n");
 	printf("lower <filename> This command prints text from a file in lowercase!\n\n");
 	printf("upper <filename> This command prints text form a file in uppercase!\n\n");
@@ -23,12 +23,12 @@ int main(int argc, char *argv[]){
 		char input[300];
 		printf("<prompt>");
 		fgets(input, sizeof(input), stdin);
-		// Initializing the array of strings to hold the seperate words of the command
+		// Initializing the array of strings to hold the separate words of the command
 		char command[10][60];
 		int i,j,ctr;
 		j = 0;
 		ctr = 0;
-		// Seperating words from the input and adding them into the array of strings
+		// Separating words from the input and adding them into the array of strings
 		for(i = 0; i<= strlen(input); i++){
 			if(input[i] == ' ' || input[i] == '\0'){
 				command[ctr][j] = '\0';
@@ -106,36 +106,57 @@ int main(int argc, char *argv[]){
 						}
 						// Counter for counting the occurence of a letter
 						int count = 0;
+						char **lines;
 						while(1){
 							if(fgets(str, 255, r) == NULL)
 								break;
 							else{
 								if(strlen(command[1]) == 1){
-									// For loop for counting the number of occurences of a letter in a give file
+									// For loop for counting the number of occurences of a letter in a given file
 									for(int j=0; j<strlen(str); j++){
 										if(tolower(str[j]) == tolower(command[1][0])){
 											count++;
 										}
 									}
 								} else {
-									// If the user is counting the number of occurences of a word we execute the following command
-									args[0] = strdup("grep");
-									args[1] = strdup("-ic");
-									args[2] = strdup(command[1]);
-									len = strlen(command[2]);
-									if(command[2][len-1] == '\n'){
-										command[2][len-1] = 0;
+									// If the user is counting the number of occurences of a word 
+									
+									lines = malloc(100 * sizeof(char*));
+									
+									i = 0;
+									int wi = 0;
+									char *word = malloc(25);
+									// Seperating the words of a line in the file
+									for(int j=0; j<strlen(str); j++){
+										if(str[j] == ' ' || str[j] == '\n'){
+											lines[i] = malloc(25);
+											strcpy(lines[i], word);
+											wi = 0;
+											i++;
+											memset(word, 0, 25);
+										} else {
+											word[wi] = str[j];
+											wi++;
+										}
 									}
-									args[3] = strdup(command[2]);
-									args[4] = NULL;
-									execvp(args[0], args);
+									i = 0;
+									// Counting the occurrence of the word
+									while(&lines[i][0] != NULL){
+										if(strstr(&lines[i][0], command[1])){
+											count++;
+										}
+										i++;
+									}
+
 								}
+							
 							}	
 						}
 						printf("%d\n", count);
 						fclose(r);
 						break;
 				}
+			// Execution of lower
 			}else if(strcmp(command[0], "lower") == 0){
 				FILE *fr;
 				char str[255];
@@ -145,21 +166,26 @@ int main(int argc, char *argv[]){
 					command[1][len-1] = 0;
 				}
 				
+				// Open file for reading
 				fr = fopen(command[1], "r");
 		
 				if(fr == NULL){
 					puts("Input file cannot be oppend");
 				}
+
 				int i = 0;
+				// Initializing an array to hold the lines of the file
 				lines = malloc(100 * sizeof(char*));
 				while(1){
 					if(fgets(str, 255, fr) == NULL)
 						break;
 					else{
+						// Converting every character to lowercase
 						for(int j=0; j<strlen(str); j++){
 							str[j] = tolower(str[j]);
 						}
 						
+						// Adding the lowercase string to the array
 						lines[i] = malloc(255);
 
 						strcpy(lines[i], str);
@@ -168,10 +194,12 @@ int main(int argc, char *argv[]){
 				}
 				fclose(fr);
 				i = 0;
+				// Printing the result to the user
 				while(&lines[i][0] != NULL){
 					printf("%s", &lines[i][0]);
 					i++;
 				}
+			// Execution of upper
 			} else if(strcmp(command[0], "upper") == 0){
 				char str[255];
 				FILE *fr;
@@ -205,7 +233,8 @@ int main(int argc, char *argv[]){
 				while(&lines[i][0] != NULL){
 					printf("%s", &lines[i][0]);
 					i++;
-				}			
+				}	
+			// Execution of format		
 			} else if (strcmp(command[0], "format") == 0){
 				char str[255];
 				FILE *fr;
@@ -225,16 +254,19 @@ int main(int argc, char *argv[]){
 						break;
 					else{
 						for(int j=0; j<strlen(str); j++){
-							if(str[j] == ' '){
+							if(str[j] == ' ' || str[j] == '-'){
+								// Removing the whitespace character
 								str[j+1] = toupper(str[j+1]);
 							       	memmove(&str[j], &str[j+1], strlen(str) - j);	
 							} else if(j == 0){
+								// Making sure that first letter is in uppercase
 								str[j] = toupper(str[j]);
 							} else {
 								str[j] = tolower(str[j]);
 							}
 						}
-					
+						
+						// Storing the formated string
 						lines[i] = malloc(255);
 
 						strcpy(lines[i], str);
@@ -243,6 +275,7 @@ int main(int argc, char *argv[]){
 				}
 				fclose(fr);
 				i = 0;
+				// Printing the result to the user
 				while(&lines[i][0] != NULL){
 					printf("%s", &lines[i][0]);
 					i++;
